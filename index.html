@@ -143,75 +143,122 @@
     </div>
 
     <script>
-        // Show selected section
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(section => {
-                section.classList.remove('active');
-            });
-            document.getElementById(sectionId).classList.add('active');
-        }
+        // Debugging setup
+        console.log("Initializing movie tracker...");
 
-        // Load movies from localStorage
+        // Initialize movies array
         let movies = JSON.parse(localStorage.getItem('movies')) || [];
+        console.log("Loaded movies:", movies);
+
+        // Section navigation
+        function showSection(sectionId) {
+            try {
+                console.log(Switching to section: ${sectionId});
+                
+                // Hide all sections
+                document.querySelectorAll('.section').forEach(section => {
+                    section.classList.remove('active');
+                });
+
+                // Show target section
+                const targetSection = document.getElementById(sectionId);
+                if (!targetSection) throw new Error(Section ${sectionId} not found);
+                targetSection.classList.add('active');
+
+                // Refresh history when viewing
+                if (sectionId === 'history') {
+                    console.log("Force refreshing history...");
+                    updateHistory();
+                }
+            } catch (error) {
+                console.error("Navigation error:", error);
+            }
+        }
 
         // Form submission
         document.getElementById('movieForm').addEventListener('submit', (e) => {
             e.preventDefault();
             
-            const movie = {
-                title: document.getElementById('title').value,
-                description: document.getElementById('description').value,
-                date: document.getElementById('date').value || new Date().toISOString().split('T')[0],
-                timestamp: new Date().toISOString()
-            };
+            try {
+                const newMovie = {
+                    title: document.getElementById('title').value.trim(),
+                    description: document.getElementById('description').value.trim(),
+                    date: document.getElementById('date').value || new Date().toISOString().split('T')[0],
+                    timestamp: new Date().toISOString()
+                };
 
-            movies.push(movie);
-            localStorage.setItem('movies', JSON.stringify(movies));
-            
-            updateCurrentMovie();
-            updateHistory();
-            e.target.reset();
+                if (!newMovie.title) throw new Error("Movie title is required");
+
+                movies.push(newMovie);
+                localStorage.setItem('movies', JSON.stringify(movies));
+                console.log("Saved new movie:", newMovie);
+
+                updateCurrentMovie();
+                updateHistory();
+                e.target.reset();
+            } catch (error) {
+                console.error("Submission error:", error.message);
+                alert(error.message);
+            }
         });
 
         // Update current movie display
         function updateCurrentMovie() {
-            const currentMovie = movies[movies.length - 1];
-            const display = document.getElementById('currentDisplay');
-            display.innerHTML = `
-                <h2>${currentMovie.title}</h2>
-                <p class="date">Watching on ${formatDate(currentMovie.date)}</p>
-                ${currentMovie.description ? <p>${currentMovie.description}</p> : ''}
-            `;
+            try {
+                const currentMovie = movies[movies.length - 1];
+                if (!currentMovie) throw new Error("No movies in history");
+
+                const display = document.getElementById('currentDisplay');
+                display.innerHTML = `
+                    <h2>${currentMovie.title}</h2>
+                    <p class="date">Watching on ${formatDate(currentMovie.date)}</p>
+                    ${currentMovie.description ? <p>${currentMovie.description}</p> : ''}
+                `;
+            } catch (error) {
+                console.error("Current movie update error:", error.message);
+                document.getElementById('currentDisplay').innerHTML = <p>No current movie</p>;
+            }
         }
 
         // Update history display
         function updateHistory() {
-            const historyList = document.getElementById('historyList');
-            historyList.innerHTML = movies
-                .slice().reverse()
-                .map(movie => `
-                    <div class="history-entry">
-                        <h3>${movie.title}</h3>
-                        <p class="date">Watched on ${formatDate(movie.date)}</p>
-                        ${movie.description ? <p>${movie.description}</p> : ''}
-                    </div>
-                `).join('');
+            try {
+                const historyList = document.getElementById('historyList');
+                if (!historyList) throw new Error("History list element missing");
+
+                historyList.innerHTML = movies
+                    .slice()
+                    .reverse()
+                    .map(movie => `
+                        <div class="history-entry">
+                            <h3>${movie.title}</h3>
+                            <p class="date">Watched on ${formatDate(movie.date)}</p>
+                            ${movie.description ? <p>${movie.description}</p> : ''}
+                        </div>
+                    `).join('');
+
+                console.log("History updated with", movies.length, "items");
+            } catch (error) {
+                console.error("History update failed:", error.message);
+                historyList.innerHTML = <p>Error loading history</p>;
+            }
         }
 
-        // Format date
+        // Date formatting
         function formatDate(dateString) {
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
             return new Date(dateString).toLocaleDateString('en-US', options);
         }
 
-        // Initial load
+        // Initial setup
         if (movies.length > 0) {
             updateCurrentMovie();
             updateHistory();
         }
 
-        // Set default date to today
+        // Set default date
         document.getElementById('date').value = new Date().toISOString().split('T')[0];
+        console.log("Initialization complete");
     </script>
 </body>
 </html> 
