@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movie Tracker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            line-height: 1.6;
+        }
+
+        nav {
+            background-color: #333;
+            padding: 1rem;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 1.2rem;
+        }
+
+        nav a:hover {
+            color: #00ff00;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 0.5rem;
+            margin-top: 0.5rem;
+            background-color: #333;
+            border: 1px solid #555;
+            color: #fff;
+        }
+
+        button {
+            background-color: #00ff00;
+            color: #000;
+            border: none;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #00cc00;
+        }
+
+        .current-movie {
+            background-color: #333;
+            padding: 2rem;
+            border-radius: 5px;
+            margin-top: 2rem;
+        }
+
+        .history-entry {
+            background-color: #333;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 5px;
+        }
+
+        .history-entry h3 {
+            color: #00ff00;
+        }
+
+        .date {
+            color: #888;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="#" onclick="showSection('current')">Current Movie</a></li>
+            <li><a href="#" onclick="showSection('history')">History</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <!-- Current Movie Section -->
+        <div id="current" class="section active">
+            <h1>Currently Watching</h1>
+            <div class="current-movie">
+                <form id="movieForm">
+                    <div class="form-group">
+                        <label for="title">Movie Title:</label>
+                        <input type="text" id="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description:</label>
+                        <textarea id="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Date:</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    <button type="submit">Update Movie</button>
+                </form>
+                <div id="currentDisplay" class="current-movie-display"></div>
+            </div>
+        </div>
+
+        <!-- History Section -->
+        <div id="history" class="section">
+            <h1>Watching History</h1>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <script>
+        // Show selected section
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        // Load movies from localStorage
+        let movies = JSON.parse(localStorage.getItem('movies')) || [];
+
+        // Form submission
+        document.getElementById('movieForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const movie = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                date: document.getElementById('date').value || new Date().toISOString().split('T')[0],
+                timestamp: new Date().toISOString()
+            };
+
+            movies.push(movie);
+            localStorage.setItem('movies', JSON.stringify(movies));
+            
+            updateCurrentMovie();
+            updateHistory();
+            e.target.reset();
+        });
+
+        // Update current movie display
+        function updateCurrentMovie() {
+            const currentMovie = movies[movies.length - 1];
+            const display = document.getElementById('currentDisplay');
+            display.innerHTML = `
+                <h2>${currentMovie.title}</h2>
+                <p class="date">Watching on ${formatDate(currentMovie.date)}</p>
+                ${currentMovie.description ? <p>${currentMovie.description}</p> : ''}
+            `;
+        }
+
+        // Update history display
+        function updateHistory() {
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = movies
+                .slice().reverse()
+                .map(movie => `
+                    <div class="history-entry">
+                        <h3>${movie.title}</h3>
+                        <p class="date">Watched on ${formatDate(movie.date)}</p>
+                        ${movie.description ? <p>${movie.description}</p> : ''}
+                    </div>
+                `).join('');
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        // Initial load
+        if (movies.length > 0) {
+            updateCurrentMovie();
+            updateHistory();
+        }
+
+        // Set default date to today
+        document.getElementById('date').value = new Date().toISOString().split('T')[0];
+    </script>
+</body>
+</html> 
